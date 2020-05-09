@@ -1,9 +1,7 @@
 import * as ts from "typescript";
 import { extract } from "./extract";
 import * as FLAT from "flatted";
-
-const materialiseName = "materialise";
-const magicPropertyName = "__ts-materialise_func";
+import { magicPropertyName } from "../magicPropertyName";
 
 export type MaterialisePluginOpttions = {
   //
@@ -25,10 +23,6 @@ function getTransformSource(
   ctx: ts.TransformationContext
 ) {
   return function transformSource(source: ts.SourceFile): ts.SourceFile {
-    if (!hasMaterialiseFuncImport(program, ctx, source)) {
-      return source;
-    }
-
     const visitor = getVisitor(program, ctx);
     return ts.visitEachChild(source, visitor, ctx);
   };
@@ -40,15 +34,11 @@ function getVisitor(program: ts.Program, ctx: ts.TransformationContext) {
   return function visitor(node: ts.Node): ts.Node {
     if (
       ts.isCallExpression(node) &&
-      node.expression.getText() === materialiseName
+      isMagicPropertyCallExpression(checker, node)
     ) {
-      if (node.arguments.length > 0) {
-        throw new Error("Call to 'materialise' already contains arguments.");
-      }
-
       if (!node.typeArguments || node.typeArguments.length !== 1) {
         throw new Error(
-          "Call to 'materialise' must contains exactly one type argument."
+          "Call to function processed by 'withType(...)' must contain exactly one type argument."
         );
       }
 
@@ -59,7 +49,10 @@ function getVisitor(program: ts.Program, ctx: ts.TransformationContext) {
       const flat = FLAT.stringify(type);
 
       const clonedNode = ts.getMutableClone(node);
-      clonedNode.arguments = ts.createNodeArray([ts.createStringLiteral(flat)]);
+      clonedNode.arguments = ts.createNodeArray([
+        ts.createStringLiteral(flat),
+        ...node.arguments,
+      ]);
 
       return clonedNode;
     }
@@ -67,44 +60,11 @@ function getVisitor(program: ts.Program, ctx: ts.TransformationContext) {
   };
 }
 
-function hasMaterialiseFuncImport(
-  program: ts.Program,
-  ctx: ts.TransformationContext,
-  source: ts.SourceFile
-): boolean {
-  const checker = program.getTypeChecker();
-
-  let isMaterialiseImportFound = false;
-
-  function visitor(node: ts.Node): ts.Node {
-    if (isMaterialiseImportFound) {
-      return node;
-    }
-
-    if (isMaterialiseFuncImport(checker, node)) {
-      isMaterialiseImportFound = true;
-      return node;
-    }
-
-    return ts.visitEachChild(node, visitor, ctx);
-  }
-
-  ts.visitEachChild(source, visitor, ctx);
-  return isMaterialiseImportFound;
-}
-
-function isMaterialiseFuncImport(
+function isMagicPropertyCallExpression(
   checker: ts.TypeChecker,
-  node: ts.Node
+  node: ts.CallExpression
 ): boolean {
-  if (ts.isNamedImports(node)) {
-    for (const element of node.elements) {
-      const type = checker.getTypeAtLocation(element);
-      const magicProperty = type.getProperty(magicPropertyName);
-      if (magicProperty) {
-        return true;
-      }
-    }
-  }
-  return false;
+  const type = checker.getTypeAtLocation(node.expression);
+  const magicProperty = type.getProperty(magicPropertyName);
+  return Boolean(magicProperty);
 }

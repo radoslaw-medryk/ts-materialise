@@ -14,3 +14,21 @@ export type Type =
   | BasicType
   | LiteralType
   | TypeParameterType;
+
+export function isType(value: unknown): value is Type {
+  return (
+    typeof value === "object" &&
+    !!value &&
+    typeof (value as any).str === "string" &&
+    typeof (value as any).type === "string" &&
+    [
+      "object",
+      "array",
+      "union",
+      "intersection",
+      "basic",
+      "literal",
+      "type-parameter",
+    ].some((q) => (value as any).type === q)
+  );
+}

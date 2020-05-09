@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import transform from "../src/transform";
 
 const program = ts.createProgram({
-  rootNames: ["./_example.ts"],
+  rootNames: ["./_debug/example.ts"],
   options: {
     alwaysStrict: true,
     strictNullChecks: true,
