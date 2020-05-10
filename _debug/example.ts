@@ -1,3 +1,8 @@
 import { materialise } from "../src/materialise";
 
-const t = materialise<number>();
+type Test = {
+  arr: number[];
+};
+
+const t = materialise<Test>();
+console.log(t);

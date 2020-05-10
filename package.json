@@ -1,9 +1,10 @@
 {
   "name": "ts-materialise",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
+    "prepack": "npm run build",
     "debug": "node --inspect-brk -r ts-node/register ./_debug/index.ts",
     "build": "tsc"
   },

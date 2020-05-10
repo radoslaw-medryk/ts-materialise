@@ -204,7 +204,7 @@ function isArrayType(checker: ts.TypeChecker, tsType: ts.Type) {
 }
 
 function getArrayItemsType(checker: ts.TypeChecker, tsType: ts.Type): ts.Type {
-  const itemsType = checker.getTypeArguments(tsType as any)[0];
+  const itemsType = (tsType as any).typeArguments && (tsType as any).typeArguments[0];
   if (!itemsType) {
     throw new Error("!itemsTType");
   }
