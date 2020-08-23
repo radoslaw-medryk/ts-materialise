@@ -1,7 +1,7 @@
 import { materialise } from "../src/materialise";
 
 type Test = {
-  arr: number[];
+  date: Date;
 };
 
 const t = materialise<Test>();
